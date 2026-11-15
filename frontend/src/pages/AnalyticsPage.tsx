@@ -41,9 +41,9 @@ const AnalyticsPage: React.FC = () => {
       {/* KPI row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Conversion Rate', value: `${convRate}%`, note: '+4% vs last month' },
+          { label: 'Conversion Rate', value: `${convRate}%`, note: 'Converted ÷ total leads' },
           { label: 'Avg Deal Value', value: `$${(avgDealValue / 1000).toFixed(1)}K`, note: 'Per converted lead' },
-          { label: 'Sales Cycle', value: '18 days', note: 'Average closure time' },
+          { label: 'Active Employees', value: String(stats?.activeEmployees ?? 7), note: 'Currently active' },
           { label: 'Pipeline Value', value: `$${(pipelineValue / 1000).toFixed(0)}K`, note: 'Active opportunities' },
         ].map(k => (
           <Card key={k.label} className="card-shadow border-border">

@@ -54,10 +54,16 @@ export const analyticsApi = {
     isApiEnabled
       ? apiRequest<DashboardStats>('/api/analytics/dashboard')
       : delay().then(mockDashboard),
-  leadSources: (): Promise<NameValue[]> =>
-    isApiEnabled
-      ? apiRequest<NameValue[]>('/api/analytics/lead-sources')
-      : delay().then(() => leadSourceData),
+  /** Share of leads per source in percent (the API returns raw counts). */
+  leadSources: async (): Promise<NameValue[]> => {
+    if (!isApiEnabled) {
+      await delay();
+      return leadSourceData;
+    }
+    const counts = await apiRequest<NameValue[]>('/api/analytics/lead-sources');
+    const total = counts.reduce((sum, c) => sum + c.value, 0);
+    return counts.map(c => ({ name: c.name, value: total ? Math.round((c.value * 100) / total) : 0 }));
+  },
   salesTrend: (): Promise<SalesTrendPoint[]> =>
     isApiEnabled
       ? apiRequest<SalesTrendPoint[]>('/api/analytics/sales-trend')

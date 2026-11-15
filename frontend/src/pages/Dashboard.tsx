@@ -16,7 +16,7 @@ import type { Lead } from '../types/crm';
 const KPICard: React.FC<{
   title: string;
   value: string;
-  change: number;
+  change?: number;   // optional: the badge is hidden when there is no real value to show
   icon: React.ReactNode;
   gradient: string;
   subtitle: string;
@@ -27,10 +27,12 @@ const KPICard: React.FC<{
         <div className={`w-10 h-10 rounded-xl ${gradient} flex items-center justify-center text-white`}>
           {icon}
         </div>
-        <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${change >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
-          {change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-          {Math.abs(change)}%
-        </div>
+        {change !== undefined && (
+          <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${change >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+            {change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+            {Math.abs(change)}%
+          </div>
+        )}
       </div>
       <div className="text-2xl font-display font-bold mb-0.5">{value}</div>
       <div className="text-sm font-medium text-foreground/80">{title}</div>
@@ -78,10 +80,10 @@ const Dashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Leads" value={String(totalLeads)} change={18} icon={<Target className="w-5 h-5" />} gradient="gradient-primary" subtitle="vs last month" />
-        <KPICard title="Converted" value={String(converted)} change={12} icon={<TrendingUp className="w-5 h-5" />} gradient="gradient-success" subtitle="deals closed" />
-        <KPICard title="Revenue" value={`$${(totalRevenue / 1000).toFixed(0)}K`} change={24} icon={<Trophy className="w-5 h-5" />} gradient="bg-warning" subtitle="total this quarter" />
-        <KPICard title="Open Tasks" value={String(openTasks)} change={-5} icon={<CheckSquare className="w-5 h-5" />} gradient="bg-purple-500" subtitle="need attention" />
+        <KPICard title="Total Leads" value={String(totalLeads)} icon={<Target className="w-5 h-5" />} gradient="gradient-primary" subtitle="all leads in the CRM" />
+        <KPICard title="Converted" value={String(converted)} icon={<TrendingUp className="w-5 h-5" />} gradient="gradient-success" subtitle="deals closed" />
+        <KPICard title="Revenue" value={`$${(totalRevenue / 1000).toFixed(0)}K`} icon={<Trophy className="w-5 h-5" />} gradient="bg-warning" subtitle="won from converted leads" />
+        <KPICard title="Open Tasks" value={String(openTasks)} icon={<CheckSquare className="w-5 h-5" />} gradient="bg-purple-500" subtitle="need attention" />
       </div>
 
       {/* Charts row */}
