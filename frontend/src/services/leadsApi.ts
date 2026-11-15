@@ -1,26 +1,11 @@
 import type { Lead, LeadStatus } from '../types/crm';
 import { mockLeads } from '../data/mockData';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiRequest, isApiEnabled } from './apiClient';
 
 // In-memory store for mock backend
 let _mockStore: Lead[] = [...mockLeads];
 
 const simulateDelay = () => new Promise(res => setTimeout(res, 400));
-
-// ─── Real API helpers ────────────────────────────────────────────────────────
-
-async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`API error ${res.status}: ${text || res.statusText}`);
-  }
-  return res.json() as Promise<T>;
-}
 
 // ─── Mock API helpers ────────────────────────────────────────────────────────
 
@@ -60,24 +45,24 @@ const mockApi = {
 export const leadsApi = {
   /** GET /api/leads */
   getAll: (): Promise<Lead[]> =>
-    API_URL ? apiFetch<Lead[]>('/api/leads') : mockApi.getAll(),
+    isApiEnabled ? apiRequest<Lead[]>('/api/leads') : mockApi.getAll(),
 
   /** POST /api/leads */
   create: (data: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>): Promise<Lead> =>
     API_URL
-      ? apiFetch<Lead>('/api/leads', { method: 'POST', body: JSON.stringify(data) })
+      ? apiRequest<Lead>('/api/leads', { method: 'POST', body: JSON.stringify(data) })
       : mockApi.create(data),
 
   /** PATCH /api/leads/:id */
   update: (id: string, patch: Partial<Lead>): Promise<Lead> =>
     API_URL
-      ? apiFetch<Lead>(`/api/leads/${id}`, { method: 'PATCH', body: JSON.stringify(patch) })
+      ? apiRequest<Lead>(`/api/leads/${id}`, { method: 'PATCH', body: JSON.stringify(patch) })
       : mockApi.update(id, patch),
 
   /** DELETE /api/leads/:id */
   delete: (id: string): Promise<void> =>
     API_URL
-      ? apiFetch<void>(`/api/leads/${id}`, { method: 'DELETE' })
+      ? apiRequest<void>(`/api/leads/${id}`, { method: 'DELETE' })
       : mockApi.delete(id),
 
   /** Convenience: change only status */
