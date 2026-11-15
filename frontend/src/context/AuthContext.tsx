@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, UserRole } from '../types/crm';
 import { mockUsers } from '../data/mockData';
+import { apiRequest, isApiEnabled, tokenStore, UNAUTHORIZED_EVENT } from '../services/apiClient';
 
 interface AuthContextType {
   user: User | null;
@@ -19,7 +20,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (stored) setUser(JSON.parse(stored));
   }, []);
 
-  const login = async (email: string, _password: string): Promise<boolean> => {
+  // The backend answered 401 (token expired / invalid) -> log the user out.
+  useEffect(() => {
+    const onUnauthorized = () => logout();
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+  }, []);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    // Real backend: POST /api/auth/login -> { token, user }
+    if (isApiEnabled) {
+      try {
+        const res = await apiRequest<{ token: string; user: User }>('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        });
+        tokenStore.set(res.token);
+        setUser(res.user);
+        sessionStorage.setItem('crm_user', JSON.stringify(res.user));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    // Mock mode (no VITE_API_URL): any password works for the demo users.
     const found = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (found) {
       setUser(found);
@@ -32,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     sessionStorage.removeItem('crm_user');
+    tokenStore.clear();
   };
 
   return (
