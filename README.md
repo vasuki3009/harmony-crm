@@ -2,7 +2,7 @@
 
 A full-stack CRM for sales teams: lead pipeline, tasks, employees, departments, goals, attendance and analytics, with role-based access.
 
-**Stack:** Java 21 · Spring Boot 3 · Spring Security (JWT) · Spring Data JPA · PostgreSQL / H2 · React 18 · TypeScript · Vite · Tailwind · shadcn/ui · Docker
+**Stack:** Java 17 · Spring Boot 3 · Spring Security (JWT) · Spring Data JPA · PostgreSQL / H2 · React 18 · TypeScript · Vite · Tailwind · shadcn/ui · Docker
 
 ```
 ┌──────────────┐   JSON + JWT    ┌──────────────────────────────┐    ┌──────────────┐
@@ -31,7 +31,7 @@ Frontend <http://localhost:3000> · API <http://localhost:8081> · Swagger <http
 
 ### Option 2 – Local development (no database to install)
 ```bash
-# terminal 1 – backend (Java 21 + Maven). Uses in-memory H2 and seeds demo data.
+# terminal 1 – backend (Java 17 + Maven). Uses in-memory H2 and seeds demo data.
 cd backend
 mvn spring-boot:run
 
