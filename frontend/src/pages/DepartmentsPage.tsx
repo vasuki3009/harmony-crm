@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { mockDepartments as initialDepts, mockUsers } from '../data/mockData';
+import { useUsers } from '../hooks/use-users';
 import { departmentsApi } from '../services/departmentsApi';
 import { usersApi } from '../services/usersApi';
 import { isApiEnabled } from '../services/apiClient';
@@ -37,15 +38,16 @@ const DeptModal: React.FC<{
   onSubmit: (data: DeptFormValues, id?: string) => Promise<void>;
 }> = ({ open, editing, onClose, onSubmit }) => {
   const [loading, setLoading] = useState(false);
+  const users = useUsers();
   const { register, handleSubmit, setValue, reset } = useForm<DeptFormValues>({
     defaultValues: editing
       ? { name: editing.name, description: editing.description ?? '', headId: editing.headId }
-      : { headId: mockUsers[0]?.id ?? '' },
+      : { headId: users[0]?.id ?? '' },
   });
 
   React.useEffect(() => {
     if (editing) reset({ name: editing.name, description: editing.description ?? '', headId: editing.headId });
-    else reset({ headId: mockUsers[0]?.id ?? '' });
+    else reset({ headId: users[0]?.id ?? '' });
   }, [editing, open]);
 
   const submit = handleSubmit(async (values) => {
@@ -69,10 +71,10 @@ const DeptModal: React.FC<{
           </div>
           <div className="space-y-1.5">
             <Label>Department Head</Label>
-            <Select defaultValue={editing?.headId ?? mockUsers[0]?.id} onValueChange={v => setValue('headId', v)}>
+            <Select defaultValue={editing?.headId ?? users[0]?.id} onValueChange={v => setValue('headId', v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {mockUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                {users.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { mockUsers } from '../data/mockData';
+import { useUsers } from '../hooks/use-users';
 import { goalsApi } from '../services/goalsApi';
 import { usersApi } from '../services/usersApi';
 import { isApiEnabled } from '../services/apiClient';
@@ -35,15 +36,16 @@ const GoalModal: React.FC<{
   onSubmit: (data: GoalFormValues, id?: string) => Promise<void>;
 }> = ({ open, editing, onClose, onSubmit }) => {
   const [loading, setLoading] = useState(false);
+  const users = useUsers();
   const { register, handleSubmit, setValue, reset } = useForm<GoalFormValues>({
     defaultValues: editing
       ? { title: editing.title, target: editing.target, current: editing.current, unit: editing.unit, period: editing.period, dueDate: editing.dueDate, userId: editing.userId }
-      : { period: 'monthly', unit: 'leads', userId: mockUsers[0]?.id ?? '' },
+      : { period: 'monthly', unit: 'leads', userId: users[0]?.id ?? '' },
   });
 
   React.useEffect(() => {
     if (editing) reset({ title: editing.title, target: editing.target, current: editing.current, unit: editing.unit, period: editing.period, dueDate: editing.dueDate, userId: editing.userId });
-    else reset({ period: 'monthly', unit: 'leads', userId: mockUsers[0]?.id ?? '' });
+    else reset({ period: 'monthly', unit: 'leads', userId: users[0]?.id ?? '' });
   }, [editing, open]);
 
   const submit = handleSubmit(async (values) => {
@@ -93,10 +95,10 @@ const GoalModal: React.FC<{
           </div>
           <div className="space-y-1.5">
             <Label>Assign To</Label>
-            <Select defaultValue={editing?.userId ?? mockUsers[0]?.id} onValueChange={v => setValue('userId', v)}>
+            <Select defaultValue={editing?.userId ?? users[0]?.id} onValueChange={v => setValue('userId', v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {mockUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                {users.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

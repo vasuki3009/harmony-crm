@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Building, DollarSign, User, Flame, Thermometer, Snowflake, Trash2 } from 'lucide-react';
 import type { Lead, LeadStatus } from '@/types/crm';
-import { mockUsers } from '@/data/mockData';
+import { useUsers } from '@/hooks/use-users';
 import { format } from 'date-fns';
 
 export const temperatureConfig = {
@@ -30,7 +30,8 @@ interface LeadCardProps {
 const LeadCard: React.FC<LeadCardProps> = ({ lead, onClick, onDelete, isDeleting }) => {
   const temp = temperatureConfig[lead.temperature];
   const TempIcon = temp.icon;
-  const assignedUser = mockUsers.find(u => u.id === lead.assignedTo);
+  const users = useUsers();
+  const assignedUser = users.find(u => u.id === lead.assignedTo);
 
   return (
     <div

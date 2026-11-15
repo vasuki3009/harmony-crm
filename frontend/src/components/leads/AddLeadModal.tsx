@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Lead, LeadStatus, LeadTemperature } from '@/types/crm';
-import { mockUsers } from '@/data/mockData';
+import { useUsers } from '@/hooks/use-users';
 import { Loader2 } from 'lucide-react';
 
 type FormValues = {
@@ -33,12 +33,13 @@ interface AddLeadModalProps {
 
 const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) => {
   const [loading, setLoading] = useState(false);
+  const users = useUsers();
   const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
       status: 'new',
       temperature: 'cold',
       source: 'Website',
-      assignedTo: mockUsers[0]?.id ?? '',
+      assignedTo: users[0]?.id ?? '',
     },
   });
 
@@ -146,10 +147,10 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
 
             <div className="space-y-1.5">
               <Label>Assign To</Label>
-              <Select defaultValue={mockUsers[0]?.id} onValueChange={v => setValue('assignedTo', v)}>
+              <Select defaultValue={users[0]?.id} onValueChange={v => setValue('assignedTo', v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {mockUsers.map(u => (
+                  {users.map(u => (
                     <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
                   ))}
                 </SelectContent>
