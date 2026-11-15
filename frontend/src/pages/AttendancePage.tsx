@@ -1,6 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { mockAttendance as initialRecords, mockUsers } from '../data/mockData';
-import type { AttendanceRecord } from '../types/crm';
+import { attendanceApi } from '../services/attendanceApi';
+import { usersApi } from '../services/usersApi';
+import { isApiEnabled } from '../services/apiClient';
+import type { AttendanceRecord, User } from '../types/crm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,9 +22,15 @@ const statusConfig = {
 
 const AttendancePage: React.FC = () => {
   const { user } = useAuth();
-  const [records, setRecords] = useState<AttendanceRecord[]>(initialRecords);
+  const [records, setRecords] = useState<AttendanceRecord[]>(isApiEnabled ? [] : initialRecords);
+  const [users, setUsers] = useState<User[]>(mockUsers);
   const [checking, setChecking] = useState(false);
   const [filterUser, setFilterUser] = useState('all');
+
+  useEffect(() => {
+    attendanceApi.getAll().then(setRecords);
+    if (isApiEnabled) usersApi.getAll().then(setUsers);
+  }, []);
 
   const today = new Date().toISOString().split('T')[0];
   const todayRecord = records.find(r => r.userId === user?.id && r.date === today);
@@ -30,33 +39,20 @@ const AttendancePage: React.FC = () => {
 
   const handleCheckIn = useCallback(async () => {
     setChecking(true);
-    await new Promise(r => setTimeout(r, 400));
-    const now = new Date();
-    const timeStr = format(now, 'HH:mm');
-    const isLate = now.getHours() >= 9 && now.getMinutes() > 15;
-
-    if (todayRecord) {
-      // Check-out
-      setRecords(prev => prev.map(r =>
-        r.id === todayRecord.id
-          ? { ...r, checkOut: timeStr, status: r.status, hoursWorked: parseFloat((Math.abs(now.getTime() - new Date(`${today}T${r.checkIn}:00`).getTime()) / 3600000).toFixed(1)) }
-          : r
-      ));
-      toast({ title: '👋 Checked out', description: `You checked out at ${timeStr}.` });
-    } else {
-      // Check-in
-      const newRecord: AttendanceRecord = {
-        id: `a${Date.now()}`,
-        userId: user!.id,
-        date: today,
-        checkIn: timeStr,
-        status: isLate ? 'late' : 'present',
-      };
-      setRecords(prev => [newRecord, ...prev]);
-      toast({ title: `✅ Checked in${isLate ? ' (Late)' : ''}`, description: `You checked in at ${timeStr}.` });
+    try {
+      if (todayRecord && isCheckedIn) {
+        const updated = await attendanceApi.checkOut();
+        setRecords(prev => prev.map(r => r.id === todayRecord.id ? updated : r));
+        toast({ title: 'Checked out', description: `You checked out at ${updated.checkOut}.` });
+      } else {
+        const created = await attendanceApi.checkIn();
+        setRecords(prev => [created, ...prev]);
+        toast({ title: `Checked in${created.status === 'late' ? ' (Late)' : ''}`, description: `You checked in at ${created.checkIn}.` });
+      }
+    } finally {
+      setChecking(false);
     }
-    setChecking(false);
-  }, [todayRecord, today, user]);
+  }, [todayRecord, isCheckedIn]);
 
   const displayedRecords = filterUser === 'all'
     ? records
@@ -65,7 +61,7 @@ const AttendancePage: React.FC = () => {
   const todayStats = {
     present: records.filter(r => r.date === today && r.status === 'present').length,
     late: records.filter(r => r.date === today && r.status === 'late').length,
-    absent: mockUsers.length - records.filter(r => r.date === today).length,
+    absent: users.length - records.filter(r => r.date === today).length,
     avgHours: (() => {
       const hrs = records.filter(r => r.hoursWorked).map(r => r.hoursWorked!);
       return hrs.length ? (hrs.reduce((a, b) => a + b, 0) / hrs.length).toFixed(1) : '—';
@@ -141,7 +137,7 @@ const AttendancePage: React.FC = () => {
               <SelectTrigger className="w-40 h-8 text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Employees</SelectItem>
-                {mockUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.name.split(' ')[0]}</SelectItem>)}
+                {users.map(u => <SelectItem key={u.id} value={u.id}>{u.name.split(' ')[0]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -151,7 +147,7 @@ const AttendancePage: React.FC = () => {
             {displayedRecords.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">No records found.</p>
             ) : displayedRecords.map(record => {
-              const emp = mockUsers.find(u => u.id === record.userId);
+              const emp = users.find(u => u.id === record.userId);
               const sConfig = statusConfig[record.status];
               return (
                 <div key={record.id} className="flex items-center gap-4 p-3 rounded-xl bg-secondary/40 hover:bg-secondary transition-colors">

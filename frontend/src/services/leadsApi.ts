@@ -49,19 +49,19 @@ export const leadsApi = {
 
   /** POST /api/leads */
   create: (data: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>): Promise<Lead> =>
-    API_URL
+    isApiEnabled
       ? apiRequest<Lead>('/api/leads', { method: 'POST', body: JSON.stringify(data) })
       : mockApi.create(data),
 
   /** PATCH /api/leads/:id */
   update: (id: string, patch: Partial<Lead>): Promise<Lead> =>
-    API_URL
+    isApiEnabled
       ? apiRequest<Lead>(`/api/leads/${id}`, { method: 'PATCH', body: JSON.stringify(patch) })
       : mockApi.update(id, patch),
 
   /** DELETE /api/leads/:id */
   delete: (id: string): Promise<void> =>
-    API_URL
+    isApiEnabled
       ? apiRequest<void>(`/api/leads/${id}`, { method: 'DELETE' })
       : mockApi.delete(id),
 

@@ -1,6 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { mockUsers as initialUsers, mockDepartments } from '../data/mockData';
+import { mockUsers as initialUsers } from '../data/mockData';
+import { usersApi } from '../services/usersApi';
+import { isApiEnabled } from '../services/apiClient';
 import type { User, UserRole } from '../types/crm';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -125,7 +127,7 @@ const EmployeeModal: React.FC<{
 };
 
 const EmployeesPage: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>(isApiEnabled ? [] : initialUsers);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [deptFilter, setDeptFilter] = useState('all');
@@ -133,6 +135,8 @@ const EmployeesPage: React.FC = () => {
   const [editing, setEditing] = useState<User | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => { usersApi.getAll().then(setUsers); }, []);
 
   const filtered = users.filter(u => {
     const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
@@ -144,36 +148,23 @@ const EmployeesPage: React.FC = () => {
   const deptNames = [...new Set(users.map(u => u.department))];
 
   const handleSubmit = useCallback(async (data: EmployeeFormValues, id?: string) => {
-    await new Promise(r => setTimeout(r, 350));
     if (id) {
-      setUsers(prev => prev.map(u => u.id === id
-        ? { ...u, ...data, avatar: data.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) }
-        : u
-      ));
-      toast({ title: '✅ Employee updated', description: `${data.name} updated.` });
+      const updated = await usersApi.patch(id, data);
+      setUsers(prev => prev.map(u => u.id === id ? updated : u));
+      toast({ title: 'Employee updated', description: `${data.name} updated.` });
     } else {
-      const newUser: User = {
-        id: `u${Date.now()}`,
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        department: data.department,
-        role: data.role,
-        status: data.status,
-        avatar: data.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
-        joinDate: new Date().toISOString().split('T')[0],
-      };
-      setUsers(prev => [newUser, ...prev]);
-      toast({ title: '✅ Employee added', description: `${data.name} has been added.` });
+      const created = await usersApi.create({ name: data.name, email: data.email, password: 'password', role: data.role, department: data.department, phone: data.phone });
+      setUsers(prev => [created, ...prev]);
+      toast({ title: 'Employee added', description: `${data.name} has been added.` });
     }
   }, []);
 
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    await new Promise(r => setTimeout(r, 300));
+    await usersApi.delete(deleteTarget.id);
     setUsers(prev => prev.filter(u => u.id !== deleteTarget.id));
-    toast({ title: '🗑 Employee removed', description: `${deleteTarget.name} removed.` });
+    toast({ title: 'Employee removed', description: `${deleteTarget.name} removed.` });
     setDeleteTarget(null);
     setDeleting(false);
   }, [deleteTarget]);

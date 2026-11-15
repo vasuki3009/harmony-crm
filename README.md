@@ -31,7 +31,7 @@ Frontend <http://localhost:3000> · API <http://localhost:8081> · Swagger <http
 
 ### Option 2 – Local development (no database to install)
 ```bash
-# terminal 1 – backend (Java 17 + Maven). Uses in-memory H2 and seeds demo data.
+# terminal 1 – backend (Java 17+ and Maven). Uses in-memory H2 and seeds demo data.
 cd backend
 mvn spring-boot:run
 
@@ -110,8 +110,18 @@ harmony-crm/
 
 ## Frontend ↔ backend status
 
-| Screen | Data source |
-|---|---|
-| Login | real JWT login (backend) |
-| Leads (list, create, drag-and-drop status, delete) | backend |
-| Tasks, Employees, Departments, Goals, Attendance, Dashboard, Analytics | still the in-memory mock data in the UI. The REST endpoints already exist, so wiring them is the next step. |
+All screens use the backend API when `VITE_API_URL` is set, and fall back to in-memory mock data when it is empty.
+
+| Screen | Data source | Notes |
+|---|---|---|
+| Login | backend (`POST /api/auth/login`) | JWT stored in sessionStorage |
+| Leads (list, create, patch, delete, activities) | backend (`/api/leads`) | Filtering by status, temperature, search |
+| Tasks (board, list, create, patch, delete) | backend (`/api/tasks`) | Drag-and-drop status changes |
+| Employees (list, create, patch, delete) | backend (`/api/users`) | Admin-only mutations |
+| Departments (list, create, patch, delete) | backend (`/api/departments`) | Live employee count |
+| Goals (list, create, patch, delete, progress) | backend (`/api/goals`) | Inline progress updates |
+| Attendance (list, check-in, check-out) | backend (`/api/attendance`) | Late detection |
+| Dashboard (KPIs, charts, leaderboard) | backend (`/api/analytics/*`, `/api/leads`) | Real-time stats |
+| Analytics (charts, breakdowns) | backend (`/api/analytics/*`, `/api/leads`) | Conversion rate, pipeline value |
+| Notifications | backend (`/api/notifications`) | Per-user, read/unread |
+| Calendar | mock data only | No backend endpoint yet |

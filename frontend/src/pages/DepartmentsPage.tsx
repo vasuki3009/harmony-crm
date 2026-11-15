@@ -1,7 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { mockDepartments as initialDepts, mockUsers } from '../data/mockData';
-import type { Department } from '../types/crm';
+import { departmentsApi } from '../services/departmentsApi';
+import { usersApi } from '../services/usersApi';
+import { isApiEnabled } from '../services/apiClient';
+import type { Department, User } from '../types/crm';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -86,33 +89,36 @@ const DeptModal: React.FC<{
 };
 
 const DepartmentsPage: React.FC = () => {
-  const [departments, setDepartments] = useState<Department[]>(initialDepts);
+  const [departments, setDepartments] = useState<Department[]>(isApiEnabled ? [] : initialDepts);
+  const [users, setUsers] = useState<User[]>(mockUsers);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Department | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Department | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  useEffect(() => {
+    departmentsApi.getAll().then(setDepartments);
+    if (isApiEnabled) usersApi.getAll().then(setUsers);
+  }, []);
+
   const handleSubmit = useCallback(async (data: DeptFormValues, id?: string) => {
-    await new Promise(r => setTimeout(r, 350));
     if (id) {
-      setDepartments(prev => prev.map(d => d.id === id ? { ...d, ...data } : d));
-      toast({ title: '✅ Department updated' });
+      const updated = await departmentsApi.patch(id, data);
+      setDepartments(prev => prev.map(d => d.id === id ? updated : d));
+      toast({ title: 'Department updated' });
     } else {
-      const newDept: Department = {
-        id: `d${Date.now()}`, name: data.name, description: data.description,
-        headId: data.headId, employeeCount: 0, createdAt: new Date().toISOString().split('T')[0],
-      };
-      setDepartments(prev => [...prev, newDept]);
-      toast({ title: '✅ Department created', description: `${data.name} added.` });
+      const created = await departmentsApi.create({ name: data.name, description: data.description, headId: data.headId });
+      setDepartments(prev => [...prev, created]);
+      toast({ title: 'Department created', description: `${data.name} added.` });
     }
   }, []);
 
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    await new Promise(r => setTimeout(r, 300));
+    await departmentsApi.delete(deleteTarget.id);
     setDepartments(prev => prev.filter(d => d.id !== deleteTarget.id));
-    toast({ title: '🗑 Department removed' });
+    toast({ title: 'Department removed' });
     setDeleteTarget(null);
     setDeleting(false);
   }, [deleteTarget]);
@@ -128,8 +134,8 @@ const DepartmentsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {departments.map((dept, i) => {
-          const head = mockUsers.find(u => u.id === dept.headId);
-          const employees = mockUsers.filter(u => u.department === dept.name);
+          const head = users.find(u => u.id === dept.headId);
+          const employees = users.filter(u => u.department === dept.name);
           return (
             <Card key={dept.id} className="card-shadow border-border hover:border-primary/30 transition-all group overflow-hidden">
               <div className={`h-2 bg-gradient-to-r ${DEPT_COLORS[i % DEPT_COLORS.length]}`} />

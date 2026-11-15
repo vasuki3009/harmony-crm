@@ -1,7 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { mockTasks, mockUsers } from '../data/mockData';
-import type { Task, TaskStatus, TaskPriority } from '../types/crm';
+import { mockUsers } from '../data/mockData';
+import { tasksApi } from '../services/tasksApi';
+import { usersApi } from '../services/usersApi';
+import { isApiEnabled } from '../services/apiClient';
+import type { Task, User, TaskStatus, TaskPriority } from '../types/crm';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,11 +43,12 @@ const statusNextMap: Record<TaskStatus, TaskStatus> = {
 // ── Task Card ────────────────────────────────────────────────────────────────
 const TaskCard: React.FC<{
   task: Task;
+  users: User[];
   onStatusChange: (id: string, s: TaskStatus) => void;
   onDelete: (id: string) => void;
   deletingId: string | null;
-}> = ({ task, onStatusChange, onDelete, deletingId }) => {
-  const assignee = mockUsers.find(u => u.id === task.assignedTo);
+}> = ({ task, users, onStatusChange, onDelete, deletingId }) => {
+  const assignee = users.find(u => u.id === task.assignedTo);
   const pConfig = priorityConfig[task.priority];
   const isOverdue = task.status !== 'completed' && isPast(parseISO(task.dueDate));
 
@@ -121,12 +125,13 @@ type TaskFormValues = {
 
 const AddTaskModal: React.FC<{
   open: boolean;
+  users: User[];
   onClose: () => void;
   onSubmit: (data: TaskFormValues) => Promise<void>;
-}> = ({ open, onClose, onSubmit }) => {
+}> = ({ open, users, onClose, onSubmit }) => {
   const [loading, setLoading] = useState(false);
   const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<TaskFormValues>({
-    defaultValues: { priority: 'medium', assignedTo: mockUsers[0]?.id ?? '' },
+    defaultValues: { priority: 'medium', assignedTo: users[0]?.id ?? '' },
   });
 
   const submit = handleSubmit(async (values) => {
@@ -164,10 +169,10 @@ const AddTaskModal: React.FC<{
             </div>
             <div className="space-y-1.5">
               <Label>Assign To</Label>
-              <Select defaultValue={mockUsers[0]?.id} onValueChange={v => setValue('assignedTo', v)}>
+              <Select defaultValue={users[0]?.id} onValueChange={v => setValue('assignedTo', v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {mockUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                  {users.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -191,13 +196,19 @@ const AddTaskModal: React.FC<{
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 const TasksPage: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<User[]>(mockUsers);
   const [search, setSearch] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [view, setView] = useState<'board' | 'list'>('board');
   const [addOpen, setAddOpen] = useState(false);
   const [dragTask, setDragTask] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    tasksApi.getAll().then(setTasks);
+    if (isApiEnabled) usersApi.getAll().then(setUsers);
+  }, []);
 
   const filtered = tasks.filter(t => {
     const matchSearch = t.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -210,39 +221,27 @@ const TasksPage: React.FC = () => {
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleCreate = useCallback(async (values: TaskFormValues) => {
-    await new Promise(r => setTimeout(r, 350));
-    const newTask: Task = {
-      id: `t${Date.now()}`,
-      title: values.title,
-      description: values.description,
-      status: 'pending',
-      priority: values.priority,
-      assignedTo: values.assignedTo,
-      createdBy: 'u1',
-      dueDate: values.dueDate,
-      tags: [],
-      comments: 0,
-    };
-    setTasks(prev => [newTask, ...prev]);
-    toast({ title: '✅ Task created', description: `"${newTask.title}" added.` });
+    const created = await tasksApi.create({
+      title: values.title, description: values.description,
+      priority: values.priority, assignedTo: values.assignedTo, dueDate: values.dueDate,
+    });
+    setTasks(prev => [created, ...prev]);
+    toast({ title: 'Task created', description: `"${created.title}" added.` });
   }, []);
 
-  const handleStatusChange = useCallback((id: string, status: TaskStatus) => {
-    setTasks(prev => prev.map(t => t.id === id
-      ? { ...t, status, completedAt: status === 'completed' ? new Date().toISOString() : undefined }
-      : t
-    ));
-    const task = tasks.find(t => t.id === id);
-    toast({ title: `Task updated`, description: `"${task?.title}" → ${status.replace('_', ' ')}` });
-  }, [tasks]);
+  const handleStatusChange = useCallback(async (id: string, status: TaskStatus) => {
+    const updated = await tasksApi.patch(id, { status });
+    setTasks(prev => prev.map(t => t.id === id ? updated : t));
+    toast({ title: `Task updated`, description: `"${updated.title}" → ${status.replace('_', ' ')}` });
+  }, []);
 
   const handleDelete = useCallback(async (id: string) => {
     setDeletingId(id);
-    await new Promise(r => setTimeout(r, 300));
     const task = tasks.find(t => t.id === id);
+    await tasksApi.delete(id);
     setTasks(prev => prev.filter(t => t.id !== id));
     setDeletingId(null);
-    toast({ title: '🗑 Task deleted', description: `"${task?.title}" removed.` });
+    toast({ title: 'Task deleted', description: `"${task?.title}" removed.` });
   }, [tasks]);
 
   const handleDrop = useCallback((status: TaskStatus) => {
@@ -312,7 +311,7 @@ const TasksPage: React.FC = () => {
                     onDragStart={() => setDragTask(task.id)}
                     onDragEnd={() => setDragTask(null)}
                   >
-                    <TaskCard task={task} onStatusChange={handleStatusChange} onDelete={handleDelete} deletingId={deletingId} />
+                    <TaskCard task={task} users={users} onStatusChange={handleStatusChange} onDelete={handleDelete} deletingId={deletingId} />
                   </div>
                 ))}
                 {getColTasks(col.id).length === 0 && (
@@ -329,7 +328,7 @@ const TasksPage: React.FC = () => {
           {filtered.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground text-sm">No tasks match your filters.</div>
           ) : filtered.map(task => {
-            const assignee = mockUsers.find(u => u.id === task.assignedTo);
+            const assignee = users.find(u => u.id === task.assignedTo);
             const pConfig = priorityConfig[task.priority];
             const isOverdue = task.status !== 'completed' && isPast(parseISO(task.dueDate));
             return (
@@ -372,7 +371,7 @@ const TasksPage: React.FC = () => {
         </div>
       )}
 
-      <AddTaskModal open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleCreate} />
+      <AddTaskModal open={addOpen} users={users} onClose={() => setAddOpen(false)} onSubmit={handleCreate} />
     </div>
   );
 };
