@@ -48,7 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
           <Briefcase className="w-4 h-4 text-white" />
         </div>
-        {!collapsed && <span className="text-sidebar-accent-foreground font-display font-bold text-lg truncate">NexusCRM</span>}
+        {!collapsed && <span className="text-sidebar-accent-foreground font-display font-bold text-lg truncate">Harmony CRM</span>}
         <button onClick={onToggle} className="ml-auto text-sidebar-foreground hover:text-sidebar-accent-foreground transition-colors">
           <ChevronLeft className={`w-4 h-4 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
         </button>
@@ -104,7 +104,7 @@ const CRMLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
 
   const unreadCount = notifications.filter(n => !n.read).length;
-  const pageTitle = navItems.find(n => n.path === location.pathname)?.label || 'NexusCRM';
+  const pageTitle = navItems.find(n => n.path === location.pathname)?.label || 'Harmony CRM';
 
   const markRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));

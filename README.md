@@ -1,5 +1,7 @@
 # Harmony CRM
 
+![CI](https://github.com/vasuki3009/harmony-crm/actions/workflows/ci.yml/badge.svg)
+
 A full-stack CRM for sales teams: lead pipeline, tasks, employees, departments, goals, attendance and analytics, with role-based access.
 
 **Stack:** Java 17 · Spring Boot 3 · Spring Security (JWT) · Spring Data JPA · PostgreSQL / H2 · React 18 · TypeScript · Vite · Tailwind · shadcn/ui · Docker
@@ -48,9 +50,9 @@ Password for all of them: `password`
 
 | Email | Role |
 |---|---|
-| alex@nexuscrm.io | admin |
-| sarah@nexuscrm.io | manager |
-| michael@nexuscrm.io | employee |
+| alex@harmonycrm.io | admin |
+| sarah@harmonycrm.io | manager |
+| michael@harmonycrm.io | employee |
 
 ## API overview
 

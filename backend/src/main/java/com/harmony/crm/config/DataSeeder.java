@@ -89,7 +89,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private User user(String id, String name, String emailName, UserRole role, String dept, String avatar,
                       String phone, int joinedDaysAgo, UserStatus status, String hash) {
-        User u = User.builder().name(name).email(emailName + "@nexuscrm.io").passwordHash(hash)
+        User u = User.builder().name(name).email(emailName + "@harmonycrm.io").passwordHash(hash)
                 .role(role).department(dept).avatar(avatar).phone(phone)
                 .joinDate(ago(joinedDaysAgo)).status(status).build();
         u.setId(id);

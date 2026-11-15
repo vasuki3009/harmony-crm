@@ -7,15 +7,15 @@ import { Building2, Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const DEMO_ACCOUNTS = [
-  { role: 'Admin', email: 'alex@nexuscrm.io', color: 'bg-primary' },
-  { role: 'Manager', email: 'sarah@nexuscrm.io', color: 'bg-accent' },
-  { role: 'Employee', email: 'michael@nexuscrm.io', color: 'bg-warning' },
+  { role: 'Admin', email: 'alex@harmonycrm.io', color: 'bg-primary' },
+  { role: 'Manager', email: 'sarah@harmonycrm.io', color: 'bg-accent' },
+  { role: 'Employee', email: 'michael@harmonycrm.io', color: 'bg-warning' },
 ];
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('alex@nexuscrm.io');
+  const [email, setEmail] = useState('alex@harmonycrm.io');
   const [password, setPassword] = useState('password');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,7 +40,7 @@ const LoginPage: React.FC = () => {
             <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
               <Building2 className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-display font-bold text-sidebar-accent-foreground">NexusCRM</span>
+            <span className="text-2xl font-display font-bold text-sidebar-accent-foreground">Harmony CRM</span>
           </div>
           <h1 className="text-4xl font-display font-bold text-sidebar-accent-foreground leading-tight mb-4">
             Manage your pipeline<br />with intelligence
@@ -52,9 +52,9 @@ const LoginPage: React.FC = () => {
 
         <div className="relative z-10 space-y-4">
           {[
-            { title: '2,400+ Active Users', desc: 'Trusted by leading enterprises worldwide' },
-            { title: '98% Lead Accuracy', desc: 'AI-powered lead scoring system' },
-            { title: '3× Faster Closure', desc: 'Automated workflows reduce manual work' },
+            { title: 'Lead pipeline', desc: 'Drag-and-drop board with a full activity timeline' },
+            { title: 'Role-based access', desc: 'Separate permissions for admins, managers and employees' },
+            { title: 'Live analytics', desc: 'Revenue trend, lead sources and a sales leaderboard' },
           ].map((item) => (
             <div key={item.title} className="flex items-center gap-4 bg-sidebar-accent rounded-xl p-4">
               <div className="w-2 h-2 rounded-full bg-sidebar-primary flex-shrink-0" />
@@ -78,7 +78,7 @@ const LoginPage: React.FC = () => {
             <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
               <Building2 className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="text-xl font-display font-bold">NexusCRM</span>
+            <span className="text-xl font-display font-bold">Harmony CRM</span>
           </div>
 
           <h2 className="text-3xl font-display font-bold mb-2">Welcome back</h2>
