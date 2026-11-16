@@ -1,7 +1,7 @@
 package com.harmony.crm.web;
 
-import com.harmony.crm.domain.User;
 import com.harmony.crm.dto.CreateUserRequest;
+import com.harmony.crm.dto.UserResponse;
 import com.harmony.crm.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,26 +25,26 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> list() {
-        return userService.list();
+    public List<UserResponse> list() {
+        return userService.list().stream().map(UserResponse::from).toList();
     }
 
     @GetMapping("/{id}")
-    public User get(@PathVariable String id) {
-        return userService.get(id);
+    public UserResponse get(@PathVariable String id) {
+        return UserResponse.from(userService.get(id));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
-    public User create(@Valid @RequestBody CreateUserRequest request) {
-        return userService.create(request);
+    public UserResponse create(@Valid @RequestBody CreateUserRequest request) {
+        return UserResponse.from(userService.create(request));
     }
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public User patch(@PathVariable String id, @RequestBody Map<String, Object> body) {
-        return userService.patch(id, body);
+    public UserResponse patch(@PathVariable String id, @RequestBody Map<String, Object> body) {
+        return UserResponse.from(userService.patch(id, body));
     }
 
     @DeleteMapping("/{id}")

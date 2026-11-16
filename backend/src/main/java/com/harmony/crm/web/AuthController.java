@@ -1,8 +1,8 @@
 package com.harmony.crm.web;
 
-import com.harmony.crm.domain.User;
 import com.harmony.crm.dto.LoginRequest;
 import com.harmony.crm.dto.LoginResponse;
+import com.harmony.crm.dto.UserResponse;
 import com.harmony.crm.service.AuthService;
 import com.harmony.crm.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,7 +29,7 @@ public class AuthController {
 
     /** The currently logged-in user (used by the frontend to restore a session). */
     @GetMapping("/me")
-    public User me() {
-        return userService.currentUser();
+    public UserResponse me() {
+        return UserResponse.from(userService.currentUser());
     }
 }

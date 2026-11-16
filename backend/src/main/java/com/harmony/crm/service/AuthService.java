@@ -3,6 +3,7 @@ package com.harmony.crm.service;
 import com.harmony.crm.domain.User;
 import com.harmony.crm.dto.LoginRequest;
 import com.harmony.crm.dto.LoginResponse;
+import com.harmony.crm.dto.UserResponse;
 import com.harmony.crm.repository.UserRepository;
 import com.harmony.crm.security.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,6 +29,6 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.email().trim(), request.password()));
         User user = users.findByEmailIgnoreCase(request.email().trim()).orElseThrow();
         String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
-        return new LoginResponse(token, user);
+        return new LoginResponse(token, UserResponse.from(user));
     }
 }

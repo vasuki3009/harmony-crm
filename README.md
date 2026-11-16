@@ -21,7 +21,8 @@ A full-stack CRM for sales teams: lead pipeline, tasks, employees, departments, 
 - **Employees & departments** – admin-managed users; department headcount is calculated live.
 - **Goals, attendance, notifications** – check-in / check-out with late and half-day detection; per-user notifications.
 - **Analytics** – dashboard KPIs, lead sources, 6-month sales trend and a rep leaderboard.
-- **Engineering basics** – Bean Validation, one global exception handler with consistent JSON errors, CORS config, OpenAPI / Swagger UI, integration tests, Docker Compose.
+- **Engineering basics** – DTOs (the API never exposes JPA entities for leads, tasks and users), optional pagination and whitelisted sorting (`?page=0&size=20&sort=value,desc` with `X-Total-Count` / `X-Total-Pages` headers), Bean Validation, one global exception handler with consistent JSON errors, CORS config, OpenAPI / Swagger UI, Flyway database migrations, Docker Compose.
+- **Testing & CI** – Mockito unit tests for the business rules, MockMvc integration tests through the real security chain, and a GitHub Actions pipeline that also runs the app against a real PostgreSQL database.
 
 ## Run it
 
