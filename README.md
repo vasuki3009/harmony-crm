@@ -27,6 +27,10 @@ A full-stack CRM for sales teams: lead pipeline, tasks, employees, departments, 
 |---|---|
 | ![Departments](docs/screenshots/departments.png) | ![Attendance](docs/screenshots/attendance.png) |
 
+| Goals | |
+|---|---|
+| ![Goals](docs/screenshots/goals.png) | |
+
 **REST API (Swagger UI)**
 
 ![Swagger UI](docs/screenshots/swagger-overview.png)
