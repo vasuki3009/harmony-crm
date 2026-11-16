@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -7,12 +7,16 @@ import { TrendingUp, Users, Target, CheckSquare, ArrowUpRight, ArrowDownRight, T
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { salesChartData, leadSourceData, leaderboardData, mockLeads, mockTasks } from '../data/mockData';
+import { analyticsApi, type DashboardStats, type SalesTrendPoint, type LeaderboardEntry, type NameValue } from '../services/analyticsApi';
+import { leadsApi } from '../services/leadsApi';
+import { isApiEnabled } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
+import type { Lead } from '../types/crm';
 
 const KPICard: React.FC<{
   title: string;
   value: string;
-  change: number;
+  change?: number;   // optional: the badge is hidden when there is no real value to show
   icon: React.ReactNode;
   gradient: string;
   subtitle: string;
@@ -23,10 +27,12 @@ const KPICard: React.FC<{
         <div className={`w-10 h-10 rounded-xl ${gradient} flex items-center justify-center text-white`}>
           {icon}
         </div>
-        <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${change >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
-          {change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-          {Math.abs(change)}%
-        </div>
+        {change !== undefined && (
+          <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${change >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+            {change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+            {Math.abs(change)}%
+          </div>
+        )}
       </div>
       <div className="text-2xl font-display font-bold mb-0.5">{value}</div>
       <div className="text-sm font-medium text-foreground/80">{title}</div>
@@ -39,11 +45,25 @@ const CHART_COLORS = ['hsl(231, 70%, 55%)', 'hsl(165, 60%, 45%)', 'hsl(38, 90%, 
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const totalLeads = mockLeads.length;
-  const converted = mockLeads.filter(l => l.status === 'converted').length;
-  const openTasks = mockTasks.filter(t => t.status !== 'completed').length;
-  const totalRevenue = mockLeads.filter(l => l.status === 'converted').reduce((s, l) => s + l.value, 0);
-  const hotLeads = mockLeads.filter(l => l.temperature === 'hot').length;
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [trend, setTrend] = useState<SalesTrendPoint[]>(salesChartData);
+  const [sources, setSources] = useState<NameValue[]>(leadSourceData);
+  const [leaders, setLeaders] = useState<LeaderboardEntry[]>(leaderboardData.map(e => ({ rank: e.rank, userId: e.userId, name: e.name, avatar: e.avatar, converted: e.converted, revenue: e.revenue })));
+  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+
+  useEffect(() => {
+    analyticsApi.dashboard().then(setStats);
+    analyticsApi.salesTrend().then(setTrend);
+    analyticsApi.leadSources().then(setSources);
+    analyticsApi.leaderboard().then(setLeaders);
+    leadsApi.getAll().then(setLeads);
+  }, []);
+
+  const totalLeads = stats?.totalLeads ?? mockLeads.length;
+  const converted = stats?.convertedLeads ?? mockLeads.filter(l => l.status === 'converted').length;
+  const openTasks = stats?.openTasks ?? mockTasks.filter(t => t.status !== 'completed').length;
+  const totalRevenue = stats?.wonRevenue ?? mockLeads.filter(l => l.status === 'converted').reduce((s, l) => s + l.value, 0);
+  const hotLeads = leads.filter(l => l.temperature === 'hot').length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -60,10 +80,10 @@ const Dashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Leads" value={String(totalLeads)} change={18} icon={<Target className="w-5 h-5" />} gradient="gradient-primary" subtitle="vs last month" />
-        <KPICard title="Converted" value={String(converted)} change={12} icon={<TrendingUp className="w-5 h-5" />} gradient="gradient-success" subtitle="deals closed" />
-        <KPICard title="Revenue" value={`$${(totalRevenue / 1000).toFixed(0)}K`} change={24} icon={<Trophy className="w-5 h-5" />} gradient="bg-warning" subtitle="total this quarter" />
-        <KPICard title="Open Tasks" value={String(openTasks)} change={-5} icon={<CheckSquare className="w-5 h-5" />} gradient="bg-purple-500" subtitle="need attention" />
+        <KPICard title="Total Leads" value={String(totalLeads)} icon={<Target className="w-5 h-5" />} gradient="gradient-primary" subtitle="all leads in the CRM" />
+        <KPICard title="Converted" value={String(converted)} icon={<TrendingUp className="w-5 h-5" />} gradient="gradient-success" subtitle="deals closed" />
+        <KPICard title="Revenue" value={`$${(totalRevenue / 1000).toFixed(0)}K`} icon={<Trophy className="w-5 h-5" />} gradient="bg-warning" subtitle="won from converted leads" />
+        <KPICard title="Open Tasks" value={String(openTasks)} icon={<CheckSquare className="w-5 h-5" />} gradient="bg-purple-500" subtitle="need attention" />
       </div>
 
       {/* Charts row */}
@@ -75,7 +95,7 @@ const Dashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={salesChartData}>
+              <AreaChart data={trend}>
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(231, 70%, 55%)" stopOpacity={0.3} />
@@ -108,14 +128,14 @@ const Dashboard: React.FC = () => {
           <CardContent>
             <ResponsiveContainer width="100%" height={140}>
               <PieChart>
-                <Pie data={leadSourceData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={3} dataKey="value">
-                  {leadSourceData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                <Pie data={sources} cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={3} dataKey="value">
+                  {sources.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                 </Pie>
                 <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
               </PieChart>
             </ResponsiveContainer>
             <div className="space-y-1.5 mt-1">
-              {leadSourceData.map((item, i) => (
+              {sources.map((item, i) => (
                 <div key={item.name} className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
@@ -140,7 +160,7 @@ const Dashboard: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            {leaderboardData.map(emp => (
+            {leaders.map(emp => (
               <div key={emp.rank} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                   emp.rank === 1 ? 'bg-warning text-white' : emp.rank === 2 ? 'bg-muted-foreground/30 text-foreground' : 'bg-secondary text-muted-foreground'
@@ -153,10 +173,6 @@ const Dashboard: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">{emp.name}</p>
                   <p className="text-xs text-muted-foreground">{emp.converted} converted • ${(emp.revenue / 1000).toFixed(0)}K</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-sm font-bold text-primary">{emp.score}</span>
-                  <span className="text-xs text-muted-foreground">/100</span>
                 </div>
               </div>
             ))}
@@ -172,7 +188,7 @@ const Dashboard: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            {mockLeads.filter(l => l.temperature === 'hot' && l.status !== 'converted' && l.status !== 'lost').slice(0, 5).map(lead => (
+            {leads.filter(l => l.temperature === 'hot' && l.status !== 'converted' && l.status !== 'lost').slice(0, 5).map(lead => (
               <div key={lead.id} className="flex items-center gap-3 p-3 rounded-xl bg-hot/5 border border-hot/20 hover:bg-hot/10 transition-colors">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">{lead.name}</p>
@@ -184,7 +200,7 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             ))}
-            {mockLeads.filter(l => l.temperature === 'hot' && l.status !== 'converted' && l.status !== 'lost').length === 0 && (
+            {leads.filter(l => l.temperature === 'hot' && l.status !== 'converted' && l.status !== 'lost').length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">No hot leads right now</p>
             )}
           </CardContent>

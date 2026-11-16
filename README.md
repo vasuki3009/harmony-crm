@@ -1,8 +1,10 @@
 # Harmony CRM
 
+![CI](https://github.com/vasuki3009/harmony-crm/actions/workflows/ci.yml/badge.svg)
+
 A full-stack CRM for sales teams: lead pipeline, tasks, employees, departments, goals, attendance and analytics, with role-based access.
 
-**Stack:** Java 21 · Spring Boot 3 · Spring Security (JWT) · Spring Data JPA · PostgreSQL / H2 · React 18 · TypeScript · Vite · Tailwind · shadcn/ui · Docker
+**Stack:** Java 17 · Spring Boot 3 · Spring Security (JWT) · Spring Data JPA · PostgreSQL / H2 · React 18 · TypeScript · Vite · Tailwind · shadcn/ui · Docker
 
 ```
 ┌──────────────┐   JSON + JWT    ┌──────────────────────────────┐    ┌──────────────┐
@@ -31,7 +33,7 @@ Frontend <http://localhost:3000> · API <http://localhost:8081> · Swagger <http
 
 ### Option 2 – Local development (no database to install)
 ```bash
-# terminal 1 – backend (Java 21 + Maven). Uses in-memory H2 and seeds demo data.
+# terminal 1 – backend (Java 17+ and Maven). Uses in-memory H2 and seeds demo data.
 cd backend
 mvn spring-boot:run
 
@@ -48,9 +50,9 @@ Password for all of them: `password`
 
 | Email | Role |
 |---|---|
-| alex@nexuscrm.io | admin |
-| sarah@nexuscrm.io | manager |
-| michael@nexuscrm.io | employee |
+| alex@harmonycrm.io | admin |
+| sarah@harmonycrm.io | manager |
+| michael@harmonycrm.io | employee |
 
 ## API overview
 
@@ -110,8 +112,18 @@ harmony-crm/
 
 ## Frontend ↔ backend status
 
-| Screen | Data source |
-|---|---|
-| Login | real JWT login (backend) |
-| Leads (list, create, drag-and-drop status, delete) | backend |
-| Tasks, Employees, Departments, Goals, Attendance, Dashboard, Analytics | still the in-memory mock data in the UI. The REST endpoints already exist, so wiring them is the next step. |
+All screens use the backend API when `VITE_API_URL` is set, and fall back to in-memory mock data when it is empty.
+
+| Screen | Data source | Notes |
+|---|---|---|
+| Login | backend (`POST /api/auth/login`) | JWT stored in sessionStorage |
+| Leads (list, create, patch, delete, activities) | backend (`/api/leads`) | Filtering by status, temperature, search |
+| Tasks (board, list, create, patch, delete) | backend (`/api/tasks`) | Drag-and-drop status changes |
+| Employees (list, create, patch, delete) | backend (`/api/users`) | Admin-only mutations |
+| Departments (list, create, patch, delete) | backend (`/api/departments`) | Live employee count |
+| Goals (list, create, patch, delete, progress) | backend (`/api/goals`) | Inline progress updates |
+| Attendance (list, check-in, check-out) | backend (`/api/attendance`) | Late detection |
+| Dashboard (KPIs, charts, leaderboard) | backend (`/api/analytics/*`, `/api/leads`) | Real-time stats |
+| Analytics (charts, breakdowns) | backend (`/api/analytics/*`, `/api/leads`) | Conversion rate, pipeline value |
+| Notifications | backend (`/api/notifications`) | Per-user, read/unread |
+| Calendar | mock data only | No backend endpoint yet |

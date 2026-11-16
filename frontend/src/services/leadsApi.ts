@@ -1,5 +1,5 @@
-import type { Lead, LeadStatus } from '../types/crm';
-import { mockLeads } from '../data/mockData';
+import type { Lead, LeadStatus, LeadActivity } from '../types/crm';
+import { mockLeads, mockLeadActivities } from '../data/mockData';
 import { apiRequest, isApiEnabled } from './apiClient';
 
 // In-memory store for mock backend
@@ -49,21 +49,27 @@ export const leadsApi = {
 
   /** POST /api/leads */
   create: (data: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>): Promise<Lead> =>
-    API_URL
+    isApiEnabled
       ? apiRequest<Lead>('/api/leads', { method: 'POST', body: JSON.stringify(data) })
       : mockApi.create(data),
 
   /** PATCH /api/leads/:id */
   update: (id: string, patch: Partial<Lead>): Promise<Lead> =>
-    API_URL
+    isApiEnabled
       ? apiRequest<Lead>(`/api/leads/${id}`, { method: 'PATCH', body: JSON.stringify(patch) })
       : mockApi.update(id, patch),
 
   /** DELETE /api/leads/:id */
   delete: (id: string): Promise<void> =>
-    API_URL
+    isApiEnabled
       ? apiRequest<void>(`/api/leads/${id}`, { method: 'DELETE' })
       : mockApi.delete(id),
+
+  /** GET /api/leads/:id/activities (newest first) */
+  activities: (leadId: string): Promise<LeadActivity[]> =>
+    isApiEnabled
+      ? apiRequest<LeadActivity[]>(`/api/leads/${leadId}/activities`)
+      : Promise.resolve(mockLeadActivities.filter(a => a.leadId === leadId)),
 
   /** Convenience: change only status */
   updateStatus: (id: string, status: LeadStatus): Promise<Lead> =>

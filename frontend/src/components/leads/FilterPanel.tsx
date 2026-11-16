@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Slider } from '@/components/ui/slider';
 import { Filter, X } from 'lucide-react';
 import type { LeadStatus, LeadTemperature } from '@/types/crm';
-import { mockUsers } from '@/data/mockData';
+import { useUsers } from '@/hooks/use-users';
 
 export interface LeadFilters {
   status: LeadStatus | 'all';
@@ -29,6 +29,7 @@ interface FilterPanelProps {
 }
 
 const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset }) => {
+  const users = useUsers();
   const activeCount = [
     filters.status !== 'all',
     filters.temperature !== 'all',
@@ -92,7 +93,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
             <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Anyone</SelectItem>
-              {mockUsers.map(u => (
+              {users.map(u => (
                 <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
               ))}
             </SelectContent>

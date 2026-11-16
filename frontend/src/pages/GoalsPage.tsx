@@ -1,8 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { mockGoals as initialGoals, mockUsers } from '../data/mockData';
+import { mockUsers } from '../data/mockData';
+import { useUsers } from '../hooks/use-users';
+import { goalsApi } from '../services/goalsApi';
+import { usersApi } from '../services/usersApi';
+import { isApiEnabled } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
-import type { Goal } from '../types/crm';
+import type { Goal, User } from '../types/crm';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,15 +36,16 @@ const GoalModal: React.FC<{
   onSubmit: (data: GoalFormValues, id?: string) => Promise<void>;
 }> = ({ open, editing, onClose, onSubmit }) => {
   const [loading, setLoading] = useState(false);
+  const users = useUsers();
   const { register, handleSubmit, setValue, reset } = useForm<GoalFormValues>({
     defaultValues: editing
       ? { title: editing.title, target: editing.target, current: editing.current, unit: editing.unit, period: editing.period, dueDate: editing.dueDate, userId: editing.userId }
-      : { period: 'monthly', unit: 'leads', userId: mockUsers[0]?.id ?? '' },
+      : { period: 'monthly', unit: 'leads', userId: users[0]?.id ?? '' },
   });
 
   React.useEffect(() => {
     if (editing) reset({ title: editing.title, target: editing.target, current: editing.current, unit: editing.unit, period: editing.period, dueDate: editing.dueDate, userId: editing.userId });
-    else reset({ period: 'monthly', unit: 'leads', userId: mockUsers[0]?.id ?? '' });
+    else reset({ period: 'monthly', unit: 'leads', userId: users[0]?.id ?? '' });
   }, [editing, open]);
 
   const submit = handleSubmit(async (values) => {
@@ -90,10 +95,10 @@ const GoalModal: React.FC<{
           </div>
           <div className="space-y-1.5">
             <Label>Assign To</Label>
-            <Select defaultValue={editing?.userId ?? mockUsers[0]?.id} onValueChange={v => setValue('userId', v)}>
+            <Select defaultValue={editing?.userId ?? users[0]?.id} onValueChange={v => setValue('userId', v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {mockUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                {users.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -111,37 +116,44 @@ const GoalModal: React.FC<{
 
 const GoalsPage: React.FC = () => {
   const { user } = useAuth();
-  const [goals, setGoals] = useState<Goal[]>(initialGoals);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [users, setUsers] = useState<User[]>(mockUsers);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Goal | null>(null);
+
+  useEffect(() => {
+    goalsApi.getAll().then(setGoals);
+    if (isApiEnabled) usersApi.getAll().then(setUsers);
+  }, []);
 
   const visibleGoals = user?.role === 'admin' ? goals : goals.filter(g => g.userId === user?.id);
 
   const handleSubmit = useCallback(async (data: GoalFormValues, id?: string) => {
-    await new Promise(r => setTimeout(r, 350));
     if (id) {
-      setGoals(prev => prev.map(g => g.id === id ? { ...g, ...data } : g));
-      toast({ title: '✅ Goal updated' });
+      const updated = await goalsApi.patch(id, data);
+      setGoals(prev => prev.map(g => g.id === id ? updated : g));
+      toast({ title: 'Goal updated' });
     } else {
-      const newGoal: Goal = { id: `g${Date.now()}`, ...data };
-      setGoals(prev => [...prev, newGoal]);
-      toast({ title: '✅ Goal set', description: `"${data.title}" created.` });
+      const created = await goalsApi.create(data);
+      setGoals(prev => [...prev, created]);
+      toast({ title: 'Goal set', description: `"${data.title}" created.` });
     }
   }, []);
 
   const handleDelete = useCallback(async (id: string) => {
     const goal = goals.find(g => g.id === id);
+    await goalsApi.delete(id);
     setGoals(prev => prev.filter(g => g.id !== id));
-    toast({ title: '🗑 Goal removed', description: `"${goal?.title}" deleted.` });
+    toast({ title: 'Goal removed', description: `"${goal?.title}" deleted.` });
   }, [goals]);
 
-  // Update progress inline
-  const handleUpdateProgress = useCallback((id: string, delta: number) => {
-    setGoals(prev => prev.map(g => g.id === id
-      ? { ...g, current: Math.max(0, Math.min(g.target, g.current + delta)) }
-      : g
-    ));
-  }, []);
+  const handleUpdateProgress = useCallback(async (id: string, delta: number) => {
+    const goal = goals.find(g => g.id === id);
+    if (!goal) return;
+    const newCurrent = Math.max(0, Math.min(goal.target, goal.current + delta));
+    const updated = await goalsApi.patch(id, { current: newCurrent });
+    setGoals(prev => prev.map(g => g.id === id ? updated : g));
+  }, [goals]);
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -155,7 +167,7 @@ const GoalsPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {visibleGoals.map(goal => {
           const pct = Math.min(100, Math.round((goal.current / goal.target) * 100));
-          const owner = mockUsers.find(u => u.id === goal.userId);
+          const owner = users.find(u => u.id === goal.userId);
           const isComplete = pct >= 100;
           const isNear = pct >= 70 && !isComplete;
 

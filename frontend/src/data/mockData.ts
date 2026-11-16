@@ -1,14 +1,14 @@
 import type { User, Department, Lead, Task, Goal, AttendanceRecord, Notification, LeadActivity } from '../types/crm';
 
 export const mockUsers: User[] = [
-  { id: 'u1', name: 'Alex Carter', email: 'alex@nexuscrm.io', role: 'admin', department: 'Executive', avatar: 'AC', phone: '+1 555-0100', joinDate: '2022-01-15', status: 'active' },
-  { id: 'u2', name: 'Sarah Johnson', email: 'sarah@nexuscrm.io', role: 'manager', department: 'Sales', avatar: 'SJ', phone: '+1 555-0101', joinDate: '2022-03-20', status: 'active' },
-  { id: 'u3', name: 'Michael Chen', email: 'michael@nexuscrm.io', role: 'employee', department: 'Sales', avatar: 'MC', phone: '+1 555-0102', joinDate: '2022-06-10', status: 'active' },
-  { id: 'u4', name: 'Emily Rodriguez', email: 'emily@nexuscrm.io', role: 'employee', department: 'Marketing', avatar: 'ER', phone: '+1 555-0103', joinDate: '2022-08-05', status: 'active' },
-  { id: 'u5', name: 'James Wilson', email: 'james@nexuscrm.io', role: 'employee', department: 'Sales', avatar: 'JW', phone: '+1 555-0104', joinDate: '2023-01-12', status: 'active' },
-  { id: 'u6', name: 'Priya Patel', email: 'priya@nexuscrm.io', role: 'manager', department: 'Marketing', avatar: 'PP', phone: '+1 555-0105', joinDate: '2022-04-18', status: 'active' },
-  { id: 'u7', name: 'David Kim', email: 'david@nexuscrm.io', role: 'employee', department: 'Support', avatar: 'DK', phone: '+1 555-0106', joinDate: '2023-03-08', status: 'active' },
-  { id: 'u8', name: 'Lisa Thompson', email: 'lisa@nexuscrm.io', role: 'employee', department: 'Marketing', avatar: 'LT', phone: '+1 555-0107', joinDate: '2023-05-22', status: 'inactive' },
+  { id: 'u1', name: 'Alex Carter', email: 'alex@harmonycrm.io', role: 'admin', department: 'Executive', avatar: 'AC', phone: '+1 555-0100', joinDate: '2022-01-15', status: 'active' },
+  { id: 'u2', name: 'Sarah Johnson', email: 'sarah@harmonycrm.io', role: 'manager', department: 'Sales', avatar: 'SJ', phone: '+1 555-0101', joinDate: '2022-03-20', status: 'active' },
+  { id: 'u3', name: 'Michael Chen', email: 'michael@harmonycrm.io', role: 'employee', department: 'Sales', avatar: 'MC', phone: '+1 555-0102', joinDate: '2022-06-10', status: 'active' },
+  { id: 'u4', name: 'Emily Rodriguez', email: 'emily@harmonycrm.io', role: 'employee', department: 'Marketing', avatar: 'ER', phone: '+1 555-0103', joinDate: '2022-08-05', status: 'active' },
+  { id: 'u5', name: 'James Wilson', email: 'james@harmonycrm.io', role: 'employee', department: 'Sales', avatar: 'JW', phone: '+1 555-0104', joinDate: '2023-01-12', status: 'active' },
+  { id: 'u6', name: 'Priya Patel', email: 'priya@harmonycrm.io', role: 'manager', department: 'Marketing', avatar: 'PP', phone: '+1 555-0105', joinDate: '2022-04-18', status: 'active' },
+  { id: 'u7', name: 'David Kim', email: 'david@harmonycrm.io', role: 'employee', department: 'Support', avatar: 'DK', phone: '+1 555-0106', joinDate: '2023-03-08', status: 'active' },
+  { id: 'u8', name: 'Lisa Thompson', email: 'lisa@harmonycrm.io', role: 'employee', department: 'Marketing', avatar: 'LT', phone: '+1 555-0107', joinDate: '2023-05-22', status: 'inactive' },
 ];
 
 export const mockDepartments: Department[] = [

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Phone, Mail, Building, DollarSign, Clock, User, ChevronRight } from 'lucide-react';
-import type { Lead, LeadStatus } from '@/types/crm';
-import { mockUsers, mockLeadActivities } from '@/data/mockData';
+import type { Lead, LeadStatus, LeadActivity } from '@/types/crm';
+import { useUsers } from '@/hooks/use-users';
+import { leadsApi } from '@/services/leadsApi';
 import { temperatureConfig, statusColors } from './LeadCard';
 import { format } from 'date-fns';
 
@@ -19,8 +20,21 @@ const activityIcons = {
 };
 
 const LeadDetail: React.FC<LeadDetailProps> = ({ lead }) => {
-  const activities = mockLeadActivities.filter(a => a.leadId === lead.id);
-  const assignedUser = mockUsers.find(u => u.id === lead.assignedTo);
+  const users = useUsers();
+  const [activities, setActivities] = React.useState<LeadActivity[]>([]);
+
+  // Reload the timeline when another lead is opened or when the status changes
+  // (the server writes a "status changed" entry for every status change).
+  React.useEffect(() => {
+    let alive = true;
+    leadsApi
+      .activities(lead.id)
+      .then(list => { if (alive) setActivities(list); })
+      .catch(() => { if (alive) setActivities([]); });
+    return () => { alive = false; };
+  }, [lead.id, lead.status]);
+
+  const assignedUser = users.find(u => u.id === lead.assignedTo);
   const temp = temperatureConfig[lead.temperature];
   const TempIcon = temp.icon;
 
@@ -86,7 +100,7 @@ const LeadDetail: React.FC<LeadDetailProps> = ({ lead }) => {
             <div className="absolute left-4 top-2 bottom-2 w-px bg-border" />
             {activities.map(activity => {
               const IconComp = activityIcons[activity.type] || Clock;
-              const performer = mockUsers.find(u => u.id === activity.performedBy);
+              const performer = users.find(u => u.id === activity.performedBy);
               return (
                 <div key={activity.id} className="flex gap-3 relative">
                   <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 z-10">
