@@ -63,6 +63,7 @@ public class SecurityConfig {
         cfg.setAllowedOriginPatterns(Arrays.stream(origins.split(",")).map(String::trim).toList());
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        cfg.setExposedHeaders(List.of("X-Total-Count", "X-Total-Pages"));   // so the browser can read paging totals
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
         return source;

@@ -1,16 +1,20 @@
 package com.harmony.crm.service;
 
 import com.harmony.crm.domain.Task;
+import com.harmony.crm.dto.TaskRequest;
 import com.harmony.crm.enums.TaskStatus;
 import com.harmony.crm.exception.ResourceNotFoundException;
 import com.harmony.crm.repository.TaskRepository;
 import com.harmony.crm.repository.TaskSpecifications;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,8 +33,12 @@ public class TaskService {
     }
 
     @Transactional(readOnly = true)
-    public List<Task> list(String assignedTo, TaskStatus status) {
-        return tasks.findAll(TaskSpecifications.filter(assignedTo, status), Sort.by("dueDate"));
+    public Page<Task> search(String assignedTo, TaskStatus status, Pageable pageable) {
+        var spec = TaskSpecifications.filter(assignedTo, status);
+        if (pageable.isUnpaged()) {
+            return new PageImpl<>(tasks.findAll(spec, pageable.getSort()));
+        }
+        return tasks.findAll(spec, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -38,12 +46,24 @@ public class TaskService {
         return tasks.findById(id).orElseThrow(() -> new ResourceNotFoundException("Task", id));
     }
 
-    public Task create(Task task) {
-        task.setId(null);
-        if (task.getCreatedBy() == null) {
-            task.setCreatedBy(userService.currentUser().getId());
+    public Task create(TaskRequest req) {
+        Task task = Task.builder()
+                .title(req.title())
+                .description(req.description())
+                .assignedTo(req.assignedTo())
+                .createdBy(req.createdBy() != null ? req.createdBy() : userService.currentUser().getId())
+                .dueDate(req.dueDate())
+                .leadId(req.leadId())
+                .comments(req.comments() == null ? 0 : req.comments())
+                .tags(req.tags() == null ? new ArrayList<>() : new ArrayList<>(req.tags()))
+                .build();
+        if (req.status() != null) {
+            task.setStatus(req.status());
         }
-        if (task.getStatus() == TaskStatus.COMPLETED && task.getCompletedAt() == null) {
+        if (req.priority() != null) {
+            task.setPriority(req.priority());
+        }
+        if (task.getStatus() == TaskStatus.COMPLETED) {
             task.setCompletedAt(LocalDate.now());
         }
         return tasks.save(task);

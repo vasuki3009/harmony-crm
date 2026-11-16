@@ -12,8 +12,10 @@ spring:
     password: ""
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create-drop      # dev/test: Hibernate builds the H2 schema from the entities
     open-in-view: false
+  flyway:
+    enabled: false               # dev/test: no migrations (H2 schema comes from Hibernate)
   jackson:
     default-property-inclusion: non_null
 
@@ -42,4 +44,6 @@ spring:
     password: ${DB_PASSWORD:harmony}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none             # prod: the schema is owned by Flyway (src/main/resources/db/migration)
+  flyway:
+    enabled: true

@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -162,6 +163,48 @@ class ApiIntegrationTest {
                 .andExpect(status().isNoContent());
         mvc.perform(get("/api/leads/" + id).header("Authorization", manager))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void leadsCanBePagedAndTotalsAreInHeaders() throws Exception {
+        mvc.perform(get("/api/leads").param("page", "0").param("size", "3")
+                        .header("Authorization", bearer("sarah@harmonycrm.io")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(header().string("X-Total-Pages", not(emptyString())))
+                .andExpect(header().string("X-Total-Count", not(emptyString())));
+    }
+
+    @Test
+    void leadsCanBeSortedByValueDescending() throws Exception {
+        mvc.perform(get("/api/leads").param("page", "0").param("size", "1").param("sort", "value,desc")
+                        .header("Authorization", bearer("sarah@harmonycrm.io")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].value").value(120000.0));
+    }
+
+    @Test
+    void sortingByANonWhitelistedFieldIsRejected() throws Exception {
+        mvc.perform(get("/api/leads").param("sort", "assignedTo;drop,desc")
+                        .header("Authorization", bearer("sarah@harmonycrm.io")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void pageSizeAboveTheLimitIsRejected() throws Exception {
+        mvc.perform(get("/api/leads").param("page", "0").param("size", "1000")
+                        .header("Authorization", bearer("sarah@harmonycrm.io")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void leadResponsesUseTheDtoShape() throws Exception {
+        mvc.perform(get("/api/leads/l1").header("Authorization", bearer("sarah@harmonycrm.io")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("l1"))
+                .andExpect(jsonPath("$.value").value(45000.0))
+                .andExpect(jsonPath("$.tags", hasItem("enterprise")))
+                .andExpect(jsonPath("$.status").value("qualified"));
     }
 
     // ---------- tasks ----------
