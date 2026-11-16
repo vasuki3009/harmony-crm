@@ -13,6 +13,24 @@ A full-stack CRM for sales teams: lead pipeline, tasks, employees, departments, 
 └──────────────┘                 └──────────────────────────────┘    └──────────────┘
 ```
 
+## Screenshots
+
+| Login | Leads pipeline (drag & drop) |
+|---|---|
+| ![Login](docs/screenshots/login.png) | ![Leads board](docs/screenshots/leads-board.png) |
+
+| Tasks board | Analytics |
+|---|---|
+| ![Tasks](docs/screenshots/tasks.png) | ![Analytics](docs/screenshots/analytics.png) |
+
+| Departments | Attendance |
+|---|---|
+| ![Departments](docs/screenshots/departments.png) | ![Attendance](docs/screenshots/attendance.png) |
+
+**REST API (Swagger UI)**
+
+![Swagger UI](docs/screenshots/swagger-overview.png)
+
 ## Features
 
 - **Authentication & authorization** – BCrypt passwords, stateless JWT, roles `admin` / `manager` / `employee` enforced with `@PreAuthorize`.
